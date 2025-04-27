@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <BaseOutputPath>C:\Users\Lenovo\source\repos\ConsoleApp55\ConsoleApp1\bin\Debug\net8.0</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="desktop.ini\**" />
+    <EmbeddedResource Remove="desktop.ini\**" />
+    <None Remove="desktop.ini\**" />
+  </ItemGroup>
+
+</Project>
