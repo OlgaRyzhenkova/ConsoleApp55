@@ -16,8 +16,23 @@ namespace DodExer
 
             string[] lines = File.ReadAllLines(inputFile);
 
+            double boysAverage = CalculateBoysAverage(lines);
+            if (boysAverage == -1)
+            {
+                Console.WriteLine("Немає студентів чоловічої статі для обчислення середнього балу.");
+                return;
+            }
+
+            Console.WriteLine($"Середній бал студентів чоловічої статі: {boysAverage:F2}");
+
+            PrintGirlsAboveAverage(lines, boysAverage);
+        }
+
+        static double CalculateBoysAverage(string[] lines)
+        {
             int boysCount = 0;
             int boysSum = 0;
+
             foreach (string line in lines)
             {
                 if (string.IsNullOrWhiteSpace(line))
@@ -42,14 +57,13 @@ namespace DodExer
             }
 
             if (boysCount == 0)
-            {
-                Console.WriteLine("Немає студентів чоловічої статі для обчислення середнього балу.");
-                return;
-            }
+                return -1;
 
-            double boysAverage = (double)boysSum / boysCount;
-            Console.WriteLine($"Середній бал студентів чоловічої статі: {boysAverage:F2}");
+            return (double)boysSum / boysCount;
+        }
 
+        static void PrintGirlsAboveAverage(string[] lines, double boysAverage)
+        {
             bool foundGirls = false;
 
             foreach (string line in lines)
