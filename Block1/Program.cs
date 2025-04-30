@@ -104,7 +104,7 @@ namespace Block1
             14 * 3600 + 40 * 60,
             16 * 3600 + 10 * 60
         };
-            int pairDuration = 60 * 60;
+            int pairDuration = 80 * 60;
             for (int i = 0; i < startTime.Length; i++)
             {
                 int pairStart = startTime[i];
