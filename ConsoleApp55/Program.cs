@@ -37,27 +37,51 @@ namespace Block2
         {
             var students = new List<(string, string, string, char, DateTime, int?, int?, int?, int)>();
             var lines = File.ReadAllLines(filePath);
-            checkDate = DateTime.ParseExact(lines[0], "dd.MM.yyyy", CultureInfo.InvariantCulture);
+            checkDate = DateTime.MinValue;
+            try
+            {
+                checkDate = DateTime.ParseExact(lines[0], "dd.MM.yyyy", CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                Console.WriteLine("!!! Помилка у першому рядку: неправильний формат дати (очікується dd.MM.yyyy)");
+                return students; 
+            }
+
             for (int i = 1; i < lines.Length; i++)
             {
                 if (string.IsNullOrWhiteSpace(lines[i]))
                     continue;
                 string[] parts = lines[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 9)
-                    continue;
-                string lastName = parts[0];
-                string firstName = parts[1];
-                string patronymic = parts[2];
-                char gender = parts[3][0];
-                DateTime birthDate = DateTime.ParseExact(parts[4], "dd.MM.yyyy", CultureInfo.InvariantCulture);
-                int? math = ParseGrade(parts[5]);
-                int? physics = ParseGrade(parts[6]);
-                int? informatic = ParseGrade(parts[7]);
-                int scholaship = int.Parse(parts[8]);
-                students.Add((lastName, firstName, patronymic, gender, birthDate, math, physics, informatic, scholaship));
+                try
+                {
+                    if (parts.Length < 9)
+                        throw new Exception("!!! Недостатньо полів (очікується 9)");
+
+                    string lastName = parts[0];
+                    string firstName = parts[1];
+                    string patronymic = parts[2];
+
+                    if (parts[3].Length != 1)
+                        throw new Exception("!!! Стать має містити лише один символ");
+
+                    char gender = parts[3][0];
+                    DateTime birthDate = DateTime.ParseExact(parts[4], "dd.MM.yyyy", CultureInfo.InvariantCulture);
+                    int? math = ParseGrade(parts[5]);
+                    int? physics = ParseGrade(parts[6]);
+                    int? informatic = ParseGrade(parts[7]);
+                    int scholarship = int.Parse(parts[8]);
+                    students.Add((lastName, firstName, patronymic, gender, birthDate, math, physics, informatic, scholarship));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"!!! Помилка в рядку {i + 1}: {ex.Message}");
+                }
             }
+
             return students;
         }
+
         static int? ParseGrade(string gradeStr)
         {
             if (gradeStr == "-")
