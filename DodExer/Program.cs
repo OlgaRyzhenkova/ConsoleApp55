@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace DodExer
@@ -13,10 +14,9 @@ namespace DodExer
                 Console.WriteLine("Файл не знайдено!");
                 return;
             }
+            var students = ReadStudentsFromFile(inputFile);
+            double boysAverage = CalculateBoysAverage(students);
 
-            string[] lines = File.ReadAllLines(inputFile);
-
-            double boysAverage = CalculateBoysAverage(lines);
             if (boysAverage == -1)
             {
                 Console.WriteLine("Немає студентів чоловічої статі для обчислення середнього балу.");
@@ -24,84 +24,99 @@ namespace DodExer
             }
 
             Console.WriteLine($"Середній бал студентів чоловічої статі: {boysAverage:F2}");
-
-            PrintGirlsAboveAverage(lines, boysAverage);
+            PrintGirlsAboveAverage(students, boysAverage);
         }
-
-        static double CalculateBoysAverage(string[] lines)
+        static List<(string surname, string name, string patronymic, string gender, int average)> ReadStudentsFromFile(string filePath)
         {
-            int boysCount = 0;
-            int boysSum = 0;
+            var students = new List<(string, string, string, string, int)>();
+            string[] lines = File.ReadAllLines(filePath);
 
-            foreach (string line in lines)
+            for (int i = 0; i < lines.Length; i++)
             {
+                string line = lines[i];
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
-
                 string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length < 8)
-                    continue;
-
-                string gender = parts[3];
-                int mark1 = ParseMark(parts[5]);
-                int mark2 = ParseMark(parts[6]);
-                int mark3 = ParseMark(parts[7]);
-
-                int average = (mark1 + mark2 + mark3) / 3;
-
-                if (gender == "Ч")
                 {
-                    boysCount++;
-                    boysSum += average;
+                    PrintError($"Рядок {i + 1}: недостатньо даних (очікується принаймні 8 полів)");
+                    continue;
+                }
+
+                string surname = parts[0];
+                string name = parts[1];
+                string patronymic = parts[2];
+                string gender = parts[3];
+                if (gender != "Ч" && gender != "Ж")
+                {
+                    PrintError($"Рядок {i + 1}: некоректне значення статі: '{gender}'");
+                    continue;
+                }
+                bool ok1 = TryParseMark(parts[5], out int mark1);
+                bool ok2 = TryParseMark(parts[6], out int mark2);
+                bool ok3 = TryParseMark(parts[7], out int mark3);
+
+                if (!ok1 || !ok2 || !ok3)
+                {
+                    PrintError($"Рядок {i + 1}: помилка у записі оцінок (дозволено числа або '-')");
+                    continue;
+                }
+                int average = (mark1 + mark2 + mark3) / 3;
+                students.Add((surname, name, patronymic, gender, average));
+            }
+
+            return students;
+        }
+        static double CalculateBoysAverage(List<(string surname, string name, string patronymic, string gender, int average)> students)
+        {
+            int sum = 0;
+            int count = 0;
+
+            foreach (var student in students)
+            {
+                if (student.gender == "Ч")
+                {
+                    sum += student.average;
+                    count++;
                 }
             }
 
-            if (boysCount == 0)
+            if (count == 0)
                 return -1;
 
-            return (double)boysSum / boysCount;
+            return (double)sum / count;
         }
-
-        static void PrintGirlsAboveAverage(string[] lines, double boysAverage)
+        static void PrintGirlsAboveAverage(List<(string surname, string name, string patronymic, string gender, int average)> students, double boysAverage)
         {
-            bool foundGirls = false;
+            bool found = false;
 
-            foreach (string line in lines)
+            foreach (var student in students)
             {
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 8)
-                    continue;
-
-                string gender = parts[3];
-                int mark1 = ParseMark(parts[5]);
-                int mark2 = ParseMark(parts[6]);
-                int mark3 = ParseMark(parts[7]);
-
-                int average = (mark1 + mark2 + mark3) / 3;
-
-                if (gender == "Ж" && average > boysAverage)
+                if (student.gender == "Ж" && student.average > boysAverage)
                 {
-                    string surname = parts[0];
-                    string name = parts[1];
-                    string patronymic = parts[2];
-
-                    Console.WriteLine($"{surname} {name} {patronymic} - середній бал: {average}");
-                    foundGirls = true;
+                    Console.WriteLine($"{student.surname} {student.name} {student.patronymic} - середній бал: {student.average}");
+                    found = true;
                 }
             }
-
-            if (!foundGirls)
+            if (!found)
             {
                 Console.WriteLine("Немає студенток, середній бал яких перевищує середній бал студентів чоловічої статі.");
             }
         }
-
-        static int ParseMark(string mark)
+        static bool TryParseMark(string input, out int mark)
         {
-            return mark == "-" ? 0 : int.Parse(mark);
+            if (input == "-")
+            {
+                mark = 0;
+                return true;
+            }
+
+            return int.TryParse(input, out mark);
+        }
+        static void PrintError(string message)
+        {
+            Console.WriteLine(message);
+            Console.ResetColor();
         }
     }
 }
