@@ -9,11 +9,13 @@ namespace DodExer
         public static void Main()
         {
             string inputFile = "input.txt";
+
             if (!File.Exists(inputFile))
             {
                 Console.WriteLine("Файл не знайдено!");
                 return;
             }
+
             var students = ReadStudentsFromFile(inputFile);
             double boysAverage = CalculateBoysAverage(students);
 
@@ -26,9 +28,10 @@ namespace DodExer
             Console.WriteLine($"Середній бал студентів чоловічої статі: {boysAverage:F2}");
             PrintGirlsAboveAverage(students, boysAverage);
         }
-        static List<(string surname, string name, string patronymic, string gender, int average)> ReadStudentsFromFile(string filePath)
+
+        static List<(string surname, string name, string patronymic, string gender, string birthdate, int mark1, int mark2, int mark3, int scholarship)> ReadStudentsFromFile(string filePath)
         {
-            var students = new List<(string, string, string, string, int)>();
+            var students = new List<(string, string, string, string, string, int, int, int, int)>();
             string[] lines = File.ReadAllLines(filePath);
 
             for (int i = 0; i < lines.Length; i++)
@@ -36,10 +39,11 @@ namespace DodExer
                 string line = lines[i];
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
+
                 string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 8)
+                if (parts.Length < 9)
                 {
-                    PrintError($"Рядок {i + 1}: недостатньо даних (очікується принаймні 8 полів)");
+                    PrintError($"Рядок {i + 1}: недостатньо даних (очікується 9 полів)");
                     continue;
                 }
 
@@ -47,27 +51,38 @@ namespace DodExer
                 string name = parts[1];
                 string patronymic = parts[2];
                 string gender = parts[3];
+                string birthdate = parts[4];
+
                 if (gender != "Ч" && gender != "Ж")
                 {
                     PrintError($"Рядок {i + 1}: некоректне значення статі: '{gender}'");
                     continue;
                 }
+
                 bool ok1 = TryParseMark(parts[5], out int mark1);
                 bool ok2 = TryParseMark(parts[6], out int mark2);
                 bool ok3 = TryParseMark(parts[7], out int mark3);
+                bool okScholar = int.TryParse(parts[8], out int scholarship);
 
                 if (!ok1 || !ok2 || !ok3)
                 {
                     PrintError($"Рядок {i + 1}: помилка у записі оцінок (дозволено числа або '-')");
                     continue;
                 }
-                int average = (mark1 + mark2 + mark3) / 3;
-                students.Add((surname, name, patronymic, gender, average));
+
+                if (!okScholar)
+                {
+                    PrintError($"Рядок {i + 1}: помилка в полі стипендії");
+                    continue;
+                }
+
+                students.Add((surname, name, patronymic, gender, birthdate, mark1, mark2, mark3, scholarship));
             }
 
             return students;
         }
-        static double CalculateBoysAverage(List<(string surname, string name, string patronymic, string gender, int average)> students)
+
+        static double CalculateBoysAverage(List<(string surname, string name, string patronymic, string gender, string birthdate, int mark1, int mark2, int mark3, int scholarship)> students)
         {
             int sum = 0;
             int count = 0;
@@ -76,7 +91,8 @@ namespace DodExer
             {
                 if (student.gender == "Ч")
                 {
-                    sum += student.average;
+                    int average = (student.mark1 + student.mark2 + student.mark3) / 3;
+                    sum += average;
                     count++;
                 }
             }
@@ -86,23 +102,30 @@ namespace DodExer
 
             return (double)sum / count;
         }
-        static void PrintGirlsAboveAverage(List<(string surname, string name, string patronymic, string gender, int average)> students, double boysAverage)
+
+        static void PrintGirlsAboveAverage(List<(string surname, string name, string patronymic, string gender, string birthdate, int mark1, int mark2, int mark3, int scholarship)> students, double boysAverage)
         {
             bool found = false;
 
             foreach (var student in students)
             {
-                if (student.gender == "Ж" && student.average > boysAverage)
+                if (student.gender == "Ж")
                 {
-                    Console.WriteLine($"{student.surname} {student.name} {student.patronymic} - середній бал: {student.average}");
-                    found = true;
+                    int average = (student.mark1 + student.mark2 + student.mark3) / 3;
+                    if (average > boysAverage)
+                    {
+                        Console.WriteLine($"{student.surname} {student.name} {student.patronymic} - середній бал: {average}");
+                        found = true;
+                    }
                 }
             }
+
             if (!found)
             {
                 Console.WriteLine("Немає студенток, середній бал яких перевищує середній бал студентів чоловічої статі.");
             }
         }
+
         static bool TryParseMark(string input, out int mark)
         {
             if (input == "-")
@@ -113,10 +136,10 @@ namespace DodExer
 
             return int.TryParse(input, out mark);
         }
+
         static void PrintError(string message)
         {
             Console.WriteLine(message);
-            Console.ResetColor();
         }
     }
 }
